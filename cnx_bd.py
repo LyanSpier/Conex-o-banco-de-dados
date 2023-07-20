@@ -1,39 +1,56 @@
 import mysql.connector
-def conectar():
-    host = 'localhost'
-    usuario = 'root'
-    senha = 'admin'
-    banco_de_dados = 'laylasupermercados'
-    
-    conexao = mysql.connector.connect(
-        host = host,
-        user = usuario,
-        password = senha,
-        database = banco_de_dados
+from faker import Faker
+
+host = 'localhost'
+usuario = 'root'
+senha = 'admin'
+banco_de_dados = 'bancoteste'
+
+conexao = mysql.connector.connect(
+    host = host,
+    user = usuario,
+    password = senha,
+    database=banco_de_dados
+)
+
+cursor = conexao.cursor()
+
+cursor.execute('''
+               CREATE TABLE IF NOT EXISTS professor(
+                 id INT AUTO_INCREMENT PRIMARY KEY,
+                 nome VARCHAR(250),
+                 data_nascimento DATE,
+                 cidade_natal VARCHAR(250),
+                 estado VARCHAR(2),
+                 renda_percapta FLOAT,
+                 formacao VARCHAR(255)
     )
     
-    return conexao
+'''
+    
+)
 
-def criar_tabela(conexao):
-    cursor = conexao.cursor()
-    cursor.execute('''
-        CREATE TABLE IF DO NOT EXIST aluno(       
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nome VARCHAR(255),
-            data_nacsimento DATE,
-            cidade_natal VARCHAR(255),
-            bairoo VARCHAR(255)
-        ) 
-    ''')
-    conexao.commit()
-    def cadastrar_aluno(conexao,nome,data_nascimento,cidade_natal,bairro):
-        cursor = conexao.cursor()
-        
-        inserir_query = '''
-        INSERT INTO aluno(nome,data_nascimento,cidade_natal,bairro)
-        VALUES(%s,%s,%s,%s)
-        
-        '''
-        valores = (nome,data_nascimento,cidade_natal,bairro)
-        cursor.execute(inserir_query,valores)
-        conexao.commit()
+fake = Faker('pt-br')
+
+dados_professor = []
+
+for i in range(1,10001):
+    nome = fake.name()
+    data_nascimento = fake.date_of_birth()
+    cidade_natal = fake.city()
+    estado = fake.estado_sigla()
+    renda_percapta = fake.pyfloat(left_digits=4,right_digits=2,positive=True)
+    formacao = fake.text(max_nb_chars=255)
+    
+    dados_professor.append((nome,data_nascimento,cidade_natal,estado,renda_percapta,formacao))
+    
+inserir_query = '''
+    INSERT INTO professor(
+        nome,data_nascimento,cidade_natal,estado,renda_percapta,formacao
+    )
+    VALUES(%s,%s,%s,%s,%s,%s)
+    '''
+cursor.executemany(inserir_query,dados_professor)
+   
+conexao.commit()
+conexao.close()
